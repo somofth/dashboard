@@ -18,7 +18,27 @@
         </div>
         <div class="header-meta">
           <span class="pill">RAG 모니터링</span>
-          <span class="pill">인간 검증 필수</span>
+          <div class="pill-with-modal">
+            <span
+              class="pill pill--interactive"
+              id="human-review-pill"
+              tabindex="0"
+            >
+              인간 검증 필수
+            </span>
+            <div class="hover-modal" id="human-review-modal" role="tooltip" aria-hidden="true">
+              <h3>왜 인간 검증이 필요할까요?</h3>
+              <p>
+                AI는 RAG 기반으로 답변하지만, 학습 철학과 맞지 않는 콘텐츠나 문법 오류를
+                만들어낼 수 있습니다.
+              </p>
+              <ul>
+                <li>환각(Hallucination)으로 인한 허위 정보 차단</li>
+                <li>PATHFLOW 커리큘럼 톤 &amp; 룰 준수 여부 확인</li>
+                <li>규정과 실제 서비스 정책의 일치성 보장</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </header>
 

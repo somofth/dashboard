@@ -275,6 +275,8 @@ const statusCountElements = {
   rejected: document.querySelector('[data-count-status="rejected"]'),
 };
 const statusTabs = Array.from(document.querySelectorAll(".status-tab"));
+const humanReviewContainer = document.querySelector(".pill-with-modal");
+const humanReviewModal = document.querySelector("#human-review-modal");
 
 const statusMap = {
   pending: "대기 중",
@@ -639,6 +641,25 @@ function updateStatusTabs() {
 statusTabs.forEach((tab) => {
   tab.addEventListener("click", () => setActiveStatus(tab.dataset.status));
 });
+
+if (humanReviewContainer && humanReviewModal) {
+  const setModalVisibility = (isVisible) => {
+    humanReviewModal.setAttribute("aria-hidden", String(!isVisible));
+  };
+
+  humanReviewContainer.addEventListener("mouseenter", () =>
+    setModalVisibility(true)
+  );
+  humanReviewContainer.addEventListener("mouseleave", () =>
+    setModalVisibility(false)
+  );
+  humanReviewContainer.addEventListener("focusin", () =>
+    setModalVisibility(true)
+  );
+  humanReviewContainer.addEventListener("focusout", () =>
+    setModalVisibility(false)
+  );
+}
 
 lessonDialog.addEventListener("close", () => {
   state.activeLessonId = null;
