@@ -1,16 +1,14 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-This repository is a Vite-powered React dashboard paired with a FastAPI backend. Key files:
-- `src/main.jsx` bootstraps React; `src/App.jsx` renders the dashboard, reviewer dialog, AI lesson modal, and language flag UI.
-- `src/data/lessons.js` stores seeded lessons, lesson-type metadata, and default target-language assignments; `src/styles.css` centralises design tokens, layout, and the language flag styles.
-- Root utilities: `index.html`, `vite.config.js`, plus backend assets—`main.py` (Gemini `/lessons/generate` endpoint), `.env` for `GEMINI_API_KEY`, and `requirements.txt`.
+This repository splits the React frontend and FastAPI backend:
+- Frontend (`frontend/`): `frontend/src/main.jsx` bootstraps React; `frontend/src/App.jsx` renders the dashboard, reviewer dialog, AI lesson modal, and language flag UI. Shared data lives in `frontend/src/data/lessons.js`, styling in `frontend/src/styles.css`, and static assets in `frontend/public/`.
+- Backend (`backend/`): `backend/main.py` exposes the Gemini-powered `/lessons/generate` endpoint. Environment variables live in `backend/.env`, with dependencies listed in `backend/requirements.txt`.
 
 ## Build, Test, and Development Commands
-- `npm install`, then `npm run dev` for local React development.
-- `npm run build` (create `dist/`) and `npm run preview` for production checks.
-- Backend: create a virtualenv, `pip install -r requirements.txt`, set `GEMINI_API_KEY` in `.env`, and run `uvicorn main:app --reload --port 8000`. Requests require `targetLanguage` (`en`, `ja`, or `zh`); FastAPI validates these before contacting Gemini.
-- Add ESLint/Vitest when needed; until then run `npx eslint src --ext .jsx` manually.
+- Frontend: `cd frontend && npm install`, then `npm run dev` on `http://localhost:5173`. Use `npm run build` (emits `frontend/dist/`) and `npm run preview` for production checks.
+- Backend: `cd backend`, create a virtualenv, `pip install -r requirements.txt`, set `GEMINI_API_KEY` in `.env`, then run `uvicorn main:app --reload --port 8000`. Requests require `targetLanguage` (`en`, `ja`, or `zh`); FastAPI validates these before contacting Gemini.
+- Add ESLint/Vitest when needed; until then run `npx eslint src --ext .jsx` from `frontend/`.
 
 ## Coding Style & Naming Conventions
 Use 2-space indentation and functional React. Keep state/setter names in `camelCase`, reserve SCREAMING_SNAKE_CASE for constant maps (`lessonTypeMap`). House UI helpers (`LessonDialog`, `LessonCreationDialog`, `LanguageFlag`) alongside their consumers unless reused, and update `main.py`'s `LESSON_TYPE_CONFIG` / language maps when lesson families evolve. Stick to the existing BEM-ish classes in `src/styles.css`; reach for inline styles only when dynamically toggling visibility.
