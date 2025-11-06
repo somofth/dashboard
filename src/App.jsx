@@ -1,6 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { initialLessons, lessonTypeMap, statusMap } from "./data/lessons.js";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+
+const LESSON_TYPE_OPTIONS = [
+  { value: "개념 설명", label: "개념 설명" },
+  { value: "롤 플레이", label: "롤 플레이" },
+  { value: "기타 실전", label: "기타 실전" },
+];
+
+const CEFR_OPTIONS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
+const THEME_SUGGESTIONS = [
+  "비즈니스",
+  "여행",
+  "기술",
+  "일상적 대화",
+  "교육",
+  "문화",
+];
+
 function formatDate(dateString) {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat("ko-KR", {
@@ -156,6 +176,231 @@ function FiltersPanel({ filters, onFilterChange, onReset }) {
         </button>
       </section>
     </aside>
+  );
+}
+
+function LessonCreationDialog({
+  open,
+  form,
+  onChange,
+  onClose,
+  onSubmit,
+  isSubmitting,
+  error,
+}) {
+  const dialogRef = useRef(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (open && !dialog.open) {
+      dialog.showModal();
+    }
+    if (!open && dialog.open) {
+      dialog.close();
+    }
+  }, [open]);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return undefined;
+
+    const handleClose = () => {
+      onClose();
+    };
+
+    dialog.addEventListener("close", handleClose);
+    return () => {
+      dialog.removeEventListener("close", handleClose);
+    };
+  }, [onClose]);
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <dialog ref={dialogRef} id="lesson-creation-dialog">
+      <form
+        method="dialog"
+        className="dialog-content"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit();
+        }}
+      >
+        <header className="dialog-header">
+          <div>
+            <h2>AI 레슨 생성</h2>
+            <p>입력값을 바탕으로 Gemini가 신규 레슨을 제안합니다.</p>
+          </div>
+          <button
+            className="dialog-close"
+            type="button"
+            aria-label="닫기"
+            onClick={() => {
+              const dialog = dialogRef.current;
+              if (dialog?.open) {
+                dialog.close();
+              } else {
+                onClose();
+              }
+            }}
+          >
+            ×
+          </button>
+        </header>
+
+        <section className="dialog-body">
+          <div className="dialog-section">
+            <h3>필수 입력</h3>
+            <div className="filter-group">
+              <label htmlFor="creation-lesson-type">레슨 타입</label>
+              <select
+                id="creation-lesson-type"
+                value={form.lessonType}
+                onChange={(event) => onChange("lessonType", event.target.value)}
+                required
+              >
+                {LESSON_TYPE_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-group">
+              <label htmlFor="creation-cefr">CEFR 레벨</label>
+              <select
+                id="creation-cefr"
+                value={form.cefrLevel}
+                onChange={(event) => onChange("cefrLevel", event.target.value)}
+                required
+              >
+                {CEFR_OPTIONS.map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-group">
+              <label htmlFor="creation-theme">
+                THEME_CATEGORY
+                <span
+                  style={{ color: "var(--text-muted)", marginLeft: "0.35rem" }}
+                >
+                  (선택 또는 직접 입력)
+                </span>
+              </label>
+              <input
+                id="creation-theme"
+                list="theme-suggestions"
+                value={form.themeCategory}
+                onChange={(event) =>
+                  onChange("themeCategory", event.target.value)
+                }
+                placeholder="예: 비즈니스"
+                required
+              />
+              <datalist id="theme-suggestions">
+                {THEME_SUGGESTIONS.map((theme) => (
+                  <option key={theme} value={theme} />
+                ))}
+              </datalist>
+            </div>
+            {form.lessonType === "롤 플레이" && (
+              <div className="filter-group">
+                <label htmlFor="creation-scenario">SCENARIO_TIME</label>
+                <input
+                  id="creation-scenario"
+                  value={form.scenarioTime}
+                  onChange={(event) =>
+                    onChange("scenarioTime", event.target.value)
+                  }
+                  placeholder="예: 오전 러시아워"
+                  required
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="dialog-section">
+            <h3>선택 입력</h3>
+            <div className="filter-group">
+              <label htmlFor="creation-grammar">GRAMMER_FOCUS</label>
+              <input
+                id="creation-grammar"
+                value={form.grammarFocus}
+                onChange={(event) =>
+                  onChange("grammarFocus", event.target.value)
+                }
+                placeholder="입력하지 않으면 AI가 추천합니다."
+              />
+            </div>
+            {form.lessonType === "롤 플레이" && (
+              <div className="filter-group">
+                <label htmlFor="creation-goal">학습자 목표 (선택 사항)</label>
+                <input
+                  id="creation-goal"
+                  value={form.targetGoal}
+                  onChange={(event) =>
+                    onChange("targetGoal", event.target.value)
+                  }
+                  placeholder="예: 고객 불만을 정중히 완화하기"
+                />
+              </div>
+            )}
+            <div className="filter-group">
+              <label htmlFor="creation-notes">세부 설명 메모</label>
+              <textarea
+                id="creation-notes"
+                rows={4}
+                value={form.notes}
+                onChange={(event) => onChange("notes", event.target.value)}
+                placeholder="검수자의 의도나 톤 지침을 적어주세요. (선택)"
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div
+              style={{
+                background: "rgba(255, 92, 92, 0.12)",
+                color: "var(--danger)",
+                padding: "0.75rem 1rem",
+                borderRadius: "12px",
+              }}
+              role="alert"
+            >
+              {error}
+            </div>
+          )}
+        </section>
+
+        <footer className="dialog-footer">
+          <button
+            type="button"
+            className="btn-neutral"
+            onClick={() => {
+              const dialog = dialogRef.current;
+              if (dialog?.open) {
+                dialog.close();
+              } else {
+                onClose();
+              }
+            }}
+            disabled={isSubmitting}
+          >
+            취소
+          </button>
+          <button type="submit" className="btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? "생성 중..." : "AI에게 생성 요청"}
+          </button>
+        </footer>
+      </form>
+    </dialog>
   );
 }
 
@@ -476,6 +721,18 @@ export default function App() {
   });
   const [dialogLessonId, setDialogLessonId] = useState(null);
   const [dialogNotes, setDialogNotes] = useState("");
+  const [isCreationOpen, setCreationOpen] = useState(false);
+  const [creationForm, setCreationForm] = useState({
+    lessonType: LESSON_TYPE_OPTIONS[0].value,
+    cefrLevel: CEFR_OPTIONS[1],
+    themeCategory: THEME_SUGGESTIONS[0],
+    grammarFocus: "",
+    notes: "",
+    scenarioTime: "",
+    targetGoal: "",
+  });
+  const [creationError, setCreationError] = useState("");
+  const [isSubmittingCreation, setSubmittingCreation] = useState(false);
 
   const activeLesson = useMemo(
     () => lessons.find((lesson) => lesson.id === dialogLessonId) ?? null,
@@ -586,6 +843,94 @@ export default function App() {
     closeLessonDialog();
   };
 
+  const openCreationDialog = () => {
+    setCreationError("");
+    setCreationOpen(true);
+  };
+
+  const closeCreationDialog = () => {
+    setCreationOpen(false);
+  };
+
+  const updateCreationForm = (key, value) => {
+    setCreationError("");
+    setCreationForm((current) => ({
+      ...current,
+      [key]: value,
+      ...(key === "lessonType" && value !== "롤 플레이"
+        ? { scenarioTime: "", targetGoal: "" }
+        : {}),
+    }));
+  };
+
+  const resetCreationForm = () => {
+    setCreationForm({
+      lessonType: LESSON_TYPE_OPTIONS[0].value,
+      cefrLevel: CEFR_OPTIONS[1],
+      themeCategory: THEME_SUGGESTIONS[0],
+      grammarFocus: "",
+      notes: "",
+      scenarioTime: "",
+      targetGoal: "",
+    });
+  };
+
+  const submitCreationRequest = async () => {
+    if (
+      creationForm.lessonType === "롤 플레이" &&
+      creationForm.scenarioTime.trim() === ""
+    ) {
+      setCreationError("SCENARIO_TIME 값을 입력해 주세요.");
+      return;
+    }
+
+    setSubmittingCreation(true);
+    setCreationError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/lessons/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          lessonType: creationForm.lessonType,
+          cefrLevel: creationForm.cefrLevel,
+          themeCategory: creationForm.themeCategory,
+          grammarFocus: creationForm.grammarFocus || null,
+          notes: creationForm.notes || null,
+          scenarioTime:
+            creationForm.lessonType === "롤 플레이"
+              ? creationForm.scenarioTime.trim()
+              : null,
+          targetGoal:
+            creationForm.lessonType === "롤 플레이"
+              ? creationForm.targetGoal.trim() || null
+              : null,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.detail || "AI 레슨 생성에 실패했습니다.");
+      }
+
+      const lesson = await response.json();
+      setLessons((current) => [lesson, ...current]);
+      setActiveStatus("pending");
+      resetCreationForm();
+      closeCreationDialog();
+    } catch (error) {
+      setCreationError(
+        error instanceof Error
+          ? error.message
+          : "AI 레슨 생성 중 알 수 없는 오류가 발생했습니다."
+      );
+    } finally {
+      setSubmittingCreation(false);
+    }
+  };
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -597,7 +942,20 @@ export default function App() {
           </p>
         </div>
         <div className="header-meta">
-          <span className="pill">AI 수업 생성</span>
+          <span
+            className="pill pill--interactive"
+            role="button"
+            tabIndex={0}
+            onClick={openCreationDialog}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openCreationDialog();
+              }
+            }}
+          >
+            AI 레슨 생성
+          </span>
           <HumanReviewPill />
         </div>
       </header>
@@ -629,6 +987,15 @@ export default function App() {
         onNotesChange={setDialogNotes}
         onClose={closeLessonDialog}
         onSubmit={handleDialogSubmit}
+      />
+      <LessonCreationDialog
+        open={isCreationOpen}
+        form={creationForm}
+        onChange={updateCreationForm}
+        onClose={closeCreationDialog}
+        onSubmit={submitCreationRequest}
+        isSubmitting={isSubmittingCreation}
+        error={creationError}
       />
     </div>
   );

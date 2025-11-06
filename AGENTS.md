@@ -1,25 +1,22 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-This repository is a Vite-powered React dashboard. Source files live under `src/`:
-- `src/main.jsx` mounts the app with React StrictMode.
-- `src/App.jsx` defines the dashboard UI, dialog flow, and filter/state management.
-- `src/data/lessons.js` houses `initialLessons`, `lessonTypeMap`, and `statusMap`; extend schemas here.
-- `src/styles.css` provides global tokens and component styles; keep selectors stable to avoid regressions.
-- Root-level `index.html` and `vite.config.js` stay close to Vite defaults—touch only when changing the build.
+This repository is a Vite-powered React dashboard paired with a FastAPI backend. Key files:
+- `src/main.jsx` bootstraps React; `src/App.jsx` renders the dashboard, reviewer dialog, and AI lesson modal.
+- `src/data/lessons.js` stores seeded lessons and lesson-type metadata; `src/styles.css` centralises tokens and layout.
+- Root utilities: `index.html`, `vite.config.js`, plus backend assets—`main.py` (Gemini `/lessons/generate` endpoint), `.env` for `GEMINI_API_KEY`, and `requirements.txt`.
 
 ## Build, Test, and Development Commands
-- `npm install` — install React, Vite, and plugin dependencies.
-- `npm run dev` — launch the Vite dev server on `http://localhost:5173`.
-- `npm run build` — emit a production build to `dist/`.
-- `npm run preview` — serve the production build locally for smoke testing.
-- Run `npx eslint src --ext .jsx` if you introduce an ESLint config; add a dedicated npm script when tooling lands.
+- `npm install`, then `npm run dev` for local React development.
+- `npm run build` (create `dist/`) and `npm run preview` for production checks.
+- Backend: create a virtualenv, `pip install -r requirements.txt`, set `GEMINI_API_KEY` in `.env`, and run `uvicorn main:app --reload --port 8000`.
+- Add ESLint/Vitest when needed; until then run `npx eslint src --ext .jsx` manually.
 
 ## Coding Style & Naming Conventions
-Use 2-space indentation and modern React with functional components and hooks. Prefer `camelCase` for state setters (`setDialogNotes`) and data keys; keep exported maps such as `lessonTypeMap` in SCREAMING_SNAKE_CASE only when they represent constants. Co-locate helper components (e.g., `LessonDialog`, `LessonCard`) inside `App.jsx` unless shared elsewhere. Maintain the BEM-style class naming already in `src/styles.css` (`pill`, `pill--interactive`) and avoid inline styles except for dynamic visibility toggles already present.
+Use 2-space indentation and functional React. Keep state/setter names in `camelCase`, reserve SCREAMING_SNAKE_CASE for constant maps (`lessonTypeMap`). House UI helpers (`LessonDialog`, `LessonCreationDialog`) alongside their consumers unless reused, and update `main.py`'s `LESSON_TYPE_CONFIG` and headings when lesson families evolve. Stick to the existing BEM-ish classes in `src/styles.css`; reach for inline styles only when dynamically toggling visibility.
 
 ## Testing Guidelines
-Automated tests are not yet implemented. When adding logic, prefer Vitest with React Testing Library: create specs alongside source files (e.g., `src/App.spec.jsx`) and cover filter behaviour, status transitions, and dialog interactions. Aim for smoke coverage on new helper hooks or utilities in `src/data/`. Until tests exist, manually verify by running `npm run dev`, exercising each status tab, adjusting filters, and confirming dialog submissions update state and counts.
+No automated tests ship today. Add Vitest + React Testing Library near the code under test (`src/App.spec.jsx`) to cover filters, status transitions, and the `.AI 수업 생성` modal—including validation for role-play fields. For FastAPI, use pytest + HTTPX to assert `/lessons/generate` handles missing keys, scenario-time requirements, and Gemini failures. Until suites exist, manually run both servers, flip every filter/tab, exercise dialog actions, and attempt AI generation with/without optional inputs.
 
 ## Commit & Pull Request Guidelines
-Recent history (`tooltip`, `Initial project setup and dashboard component`) shows concise, present-tense subjects. Keep summaries under 50 characters where practical, and add detail in the body if needed. For pull requests, provide: 1) a short problem statement, 2) screenshots or GIFs of UI changes, and 3) references to relevant issues or lesson IDs. Request review before merging, and confirm manual QA steps in the description.
+Git history favours short, present-tense subjects (`tooltip`). Keep titles under ~50 characters, elaborating in the body if scope demands it. For pull requests, supply a brief problem summary, screenshots/GIFs for UI tweaks, linked issues, and the manual QA you ran (dev server, uvicorn, AI generation happy/failure paths).
