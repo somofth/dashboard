@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { initialLessons, lessonTypeMap, statusMap } from "./data/lessons.js";
 
 const API_BASE_URL =
@@ -7,7 +7,6 @@ const API_BASE_URL =
 const LESSON_TYPE_OPTIONS = [
   { value: "개념 설명", label: "개념 설명" },
   { value: "롤 플레이", label: "롤 플레이" },
-  { value: "기타 실전", label: "기타 실전" },
 ];
 
 const CEFR_OPTIONS = ["A1", "A2", "B1", "B2", "C1", "C2"];
@@ -20,6 +19,32 @@ const THEME_SUGGESTIONS = [
   "교육",
   "문화",
 ];
+
+const LANGUAGE_OPTIONS = [
+  {
+    value: "en",
+    label: "영어 (English)",
+    emoji: "🇺🇸",
+    imageSrc: "/us_flag.png",
+  },
+  {
+    value: "ja",
+    label: "일본어 (日本語)",
+    emoji: "🇯🇵",
+    imageSrc: "/japan_flag.png",
+  },
+  {
+    value: "zh",
+    label: "중국어 (中文)",
+    emoji: "🇨🇳",
+    imageSrc: "/china_flag.png",
+  },
+];
+
+const LANGUAGE_MAP = LANGUAGE_OPTIONS.reduce((acc, option) => {
+  acc[option.value] = option;
+  return acc;
+}, {});
 
 function formatDate(dateString) {
   const date = new Date(dateString);
@@ -189,6 +214,7 @@ function LessonCreationDialog({
   error,
 }) {
   const dialogRef = useRef(null);
+  const themeListId = useId();
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -224,7 +250,7 @@ function LessonCreationDialog({
     <dialog ref={dialogRef} id="lesson-creation-dialog">
       <form
         method="dialog"
-        className="dialog-content"
+        className="dialog-content lesson-creation-dialog"
         onSubmit={(event) => {
           event.preventDefault();
           onSubmit();
@@ -271,6 +297,27 @@ function LessonCreationDialog({
               </select>
             </div>
             <div className="filter-group">
+              <label htmlFor="creation-language">수업 대상 언어</label>
+              <select
+                id="creation-language"
+                value={form.targetLanguage}
+                onChange={(event) =>
+                  onChange("targetLanguage", event.target.value)
+                }
+                required
+              >
+                {LANGUAGE_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <p className="field-hint">
+                안내 문구는 한국어로 제공되며, 연습 표현은 선택한 언어에 맞춰
+                생성됩니다.
+              </p>
+            </div>
+            <div className="filter-group">
               <label htmlFor="creation-cefr">CEFR 레벨</label>
               <select
                 id="creation-cefr"
@@ -296,7 +343,7 @@ function LessonCreationDialog({
               </label>
               <input
                 id="creation-theme"
-                list="theme-suggestions"
+                list={themeListId}
                 value={form.themeCategory}
                 onChange={(event) =>
                   onChange("themeCategory", event.target.value)
@@ -304,7 +351,7 @@ function LessonCreationDialog({
                 placeholder="예: 비즈니스"
                 required
               />
-              <datalist id="theme-suggestions">
+              <datalist id={themeListId}>
                 {THEME_SUGGESTIONS.map((theme) => (
                   <option key={theme} value={theme} />
                 ))}
@@ -412,10 +459,38 @@ function Tag({ label, value }) {
   );
 }
 
+function LanguageFlag({ code }) {
+  const normalizedCode = (code || "en").toLowerCase();
+  const metadata = LANGUAGE_MAP[normalizedCode] ?? {
+    emoji: "🏳️",
+    label: "미정",
+    imageSrc: undefined,
+  };
+  return (
+    <span
+      className="language-flag"
+      role="img"
+      aria-label={`${metadata.label} 레슨`}
+      title={`${metadata.label} 레슨`}
+    >
+      {metadata.imageSrc ? (
+        <img
+          src={metadata.imageSrc}
+          alt={`${metadata.label} 국기`}
+          className="language-flag__img"
+        />
+      ) : (
+        metadata.emoji
+      )}
+    </span>
+  );
+}
+
 function LessonCard({ lesson, onOpen, onStatusChange }) {
   const {
     id,
     title,
+    targetLanguage: lessonTargetLanguage,
     lessonType,
     summary,
     updatedAt,
@@ -427,10 +502,24 @@ function LessonCard({ lesson, onOpen, onStatusChange }) {
     riskFlags = [],
   } = lesson;
 
+  const targetLanguage = (
+    lessonTargetLanguage ??
+    lesson.tags?.TARGET_LANGUAGE ??
+    "en"
+  ).toLowerCase();
+
+  const languageMeta = LANGUAGE_MAP[targetLanguage] ?? {
+    emoji: "🏳️",
+    label: "미정",
+  };
+
   return (
     <article className="lesson-card" data-lesson-id={id}>
       <header>
-        <h2 className="lesson-title">{title}</h2>
+        <div className="lesson-title-wrapper">
+          <LanguageFlag code={targetLanguage} />
+          <h2 className="lesson-title">{title}</h2>
+        </div>
         <span className={`lesson-status status-${status}`}>
           {statusMap[status] ?? status}
         </span>
@@ -438,6 +527,7 @@ function LessonCard({ lesson, onOpen, onStatusChange }) {
 
       <div className="lesson-meta">
         <span>레슨 타입: {lessonTypeMap[lessonType] ?? "N/A"}</span>
+        <span>대상 언어: {languageMeta.label}</span>
         <span>업데이트: {formatDate(updatedAt)}</span>
         <span>생성: {submittedBy}</span>
       </div>
@@ -584,6 +674,14 @@ function LessonDialog({ lesson, notes, onNotesChange, onClose, onSubmit }) {
     return null;
   }
 
+  const languageMeta = LANGUAGE_MAP[
+    (
+      lesson.targetLanguage ??
+      lesson.tags?.TARGET_LANGUAGE ??
+      "en"
+    ).toLowerCase()
+  ] ?? { label: "미정" };
+
   return (
     <dialog id="lesson-dialog" ref={dialogRef}>
       <form
@@ -600,8 +698,9 @@ function LessonDialog({ lesson, notes, onNotesChange, onClose, onSubmit }) {
           <div>
             <h2 id="dialog-title">{lesson.title}</h2>
             <p id="dialog-subtitle">
-              CEFR {lesson.tags.CEFR_LEVEL} · {lessonTypeMap[lesson.lessonType]}{" "}
-              · {statusMap[lesson.status] ?? lesson.status} ·{" "}
+              CEFR {lesson.tags.CEFR_LEVEL} · {languageMeta.label} ·{" "}
+              {lessonTypeMap[lesson.lessonType]} ·{" "}
+              {statusMap[lesson.status] ?? lesson.status} ·{" "}
               {formatDate(lesson.updatedAt)}
             </p>
           </div>
@@ -724,6 +823,7 @@ export default function App() {
   const [isCreationOpen, setCreationOpen] = useState(false);
   const [creationForm, setCreationForm] = useState({
     lessonType: LESSON_TYPE_OPTIONS[0].value,
+    targetLanguage: LANGUAGE_OPTIONS[0].value,
     cefrLevel: CEFR_OPTIONS[1],
     themeCategory: THEME_SUGGESTIONS[0],
     grammarFocus: "",
@@ -866,6 +966,7 @@ export default function App() {
   const resetCreationForm = () => {
     setCreationForm({
       lessonType: LESSON_TYPE_OPTIONS[0].value,
+      targetLanguage: LANGUAGE_OPTIONS[0].value,
       cefrLevel: CEFR_OPTIONS[1],
       themeCategory: THEME_SUGGESTIONS[0],
       grammarFocus: "",
@@ -895,6 +996,7 @@ export default function App() {
         },
         body: JSON.stringify({
           lessonType: creationForm.lessonType,
+          targetLanguage: creationForm.targetLanguage,
           cefrLevel: creationForm.cefrLevel,
           themeCategory: creationForm.themeCategory,
           grammarFocus: creationForm.grammarFocus || null,
@@ -916,6 +1018,9 @@ export default function App() {
       }
 
       const lesson = await response.json();
+      if (!lesson.targetLanguage) {
+        lesson.targetLanguage = creationForm.targetLanguage;
+      }
       setLessons((current) => [lesson, ...current]);
       setActiveStatus("pending");
       resetCreationForm();

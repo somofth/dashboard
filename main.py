@@ -66,6 +66,11 @@ LESSON_TYPE_CONFIG = {
 
 class LessonGenerationRequest(BaseModel):
     lesson_type: str = Field(..., alias="lessonType", description="레슨 타입")
+    target_language: str = Field(
+        ...,
+        alias="targetLanguage",
+        description="레슨에서 학습할 대상 언어 코드 (en/ja/zh 등)",
+    )
     cefr_level: str = Field(..., alias="cefrLevel", description="CEFR 레벨")
     theme_category: str = Field(..., alias="themeCategory", description="주제 범주")
     grammar_focus: Optional[str] = Field(
@@ -97,6 +102,7 @@ class Lesson(BaseModel):
     title: str
     summary: str
     lessonType: int
+    targetLanguage: str
     status: str = "pending"
     createdAt: str
     updatedAt: str
@@ -124,10 +130,11 @@ def _build_prompt(payload: LessonGenerationRequest) -> str:
     instructions = [
         "You are an instructional designer for PATHFLOW.",
         "Generate a rich ESL lesson in Korean for adult learners based on the inputs.",
+        "All reviewer-facing commentary must remain in Korean, while practice content must align with the specified target language.",
         "Return JSON with keys: title, summary, sections (array of {heading, body list}), and risk_flags (array).",
         "Body arrays should contain bullet-sized Korean sentences aimed at reviewers.",
         "Keep tone professional and review-focused.",
-        "Honor the CEFR level and theme. If grammar focus is missing, select one that matches.",
+        "Honor the CEFR level, theme, and target language. If grammar focus is missing, select one that matches.",
     ]
     if config:
         instructions.append(config["prompt"])
@@ -139,12 +146,15 @@ def _build_prompt(payload: LessonGenerationRequest) -> str:
         instructions.append(
             "Mirror the heading structure used across existing PATHFLOW lessons (three ordered sections)."
         )
+    target_language_value = (payload.target_language or "en").strip().lower() or "en"
     context: Dict[str, Any] = {
         "lesson_type": payload.lesson_type,
+        "target_language": target_language_value,
         "cefr_level": payload.cefr_level,
         "theme_category": payload.theme_category,
         "grammar_focus": payload.grammar_focus or "모델이 문맥상 적절하게 선택",
         "notes": payload.notes or "추가 지시 없음",
+        "delivery_language": "ko-KR",
     }
     scenario_time_value = (payload.scenario_time or "").strip()
     target_goal_value = (payload.target_goal or "").strip()
@@ -272,6 +282,7 @@ def _format_lesson(data: Dict[str, Any], payload: LessonGenerationRequest) -> Le
     risk_flags = data.get("risk_flags") or []
     if not isinstance(risk_flags, list):
         risk_flags = [str(risk_flags)]
+    target_language_value = (payload.target_language or "en").strip().lower() or "en"
     extra_tags = []
     notes_value = (payload.notes or "").strip()
     if notes_value:
@@ -288,6 +299,7 @@ def _format_lesson(data: Dict[str, Any], payload: LessonGenerationRequest) -> Le
         title=data.get("title", "AI 생성 레슨"),
         summary=data.get("summary", "AI가 생성한 레슨 요약"),
         lessonType=lesson_type_code,
+        targetLanguage=target_language_value,
         createdAt=now_iso,
         updatedAt=now_iso,
         tags={
@@ -297,6 +309,7 @@ def _format_lesson(data: Dict[str, Any], payload: LessonGenerationRequest) -> Le
             "grammer_focus": data.get(
                 "grammar_focus", payload.grammar_focus or "Auto-selected"
             ),
+            "TARGET_LANGUAGE": target_language_value,
         },
         extraTags=extra_tags or None,
         content=[
@@ -318,6 +331,13 @@ async def generate_lesson(payload: LessonGenerationRequest):
         ):
             raise HTTPException(
                 status_code=422, detail="SCENARIO_TIME 값이 필요합니다."
+            )
+        allowed_languages = {"en", "ja", "zh"}
+        target_language_clean = (payload.target_language or "").strip().lower()
+        if target_language_clean not in allowed_languages:
+            raise HTTPException(
+                status_code=422,
+                detail="targetLanguage 값은 en, ja, zh 중 하나여야 합니다.",
             )
 
         prompt = _build_prompt(payload)

@@ -15,6 +15,7 @@ export const initialLessons = [
   {
     id: "05cc7111-40c5-4a09-9a3d-c41f82b1bc15",
     title: "B2 비즈니스 협상 전략 - 조건절 활용",
+    targetLanguage: "en",
     summary:
       "해외 파트너와의 가격 협상 상황에서 가정법 과거 완료를 활용하는 전략을 설명합니다. 조건절을 이용해 타협안을 제시하는 표현을 집중적으로 다룹니다.",
     lessonType: 1,
@@ -28,6 +29,7 @@ export const initialLessons = [
       grammer_focus: "Third conditional",
       lesson_type: "1",
       theme_category: "business",
+      TARGET_LANGUAGE: "en",
       uuid: "05cc7111-40c5-4a09-9a3d-c41f82b1bc15",
     },
     extraTags: [
@@ -68,6 +70,7 @@ export const initialLessons = [
   {
     id: "a3f2b71e-7446-4d15-bc83-42e5babbdc74",
     title: "Business Email Writing Basics",
+    targetLanguage: "en",
     summary:
       "정중한 비즈니스 이메일 오프너와 요청 문장을 단계적으로 학습하고, 완곡 표현을 연습하는 개념 설명 레슨입니다.",
     lessonType: 1,
@@ -81,6 +84,7 @@ export const initialLessons = [
       grammer_focus: "Polite requests",
       lesson_type: "1",
       theme_category: "business",
+      TARGET_LANGUAGE: "en",
       uuid: "a3f2b71e-7446-4d15-bc83-42e5babbdc74",
     },
     extraTags: [
@@ -119,6 +123,7 @@ export const initialLessons = [
   {
     id: "4f41c96e-21b3-45a1-8bf7-4b6689c4ac59",
     title: "A2 일상 대화 - 카페 주문 롤 플레이",
+    targetLanguage: "ja",
     summary:
       "카페에서 음료와 간단한 디저트를 주문하는 상황을 롤 플레이 형태로 연습합니다. 학생이 조건부 요구(예: 무지방 우유 요청)를 영어로 전달할 수 있도록 돕습니다.",
     lessonType: 2,
@@ -132,6 +137,7 @@ export const initialLessons = [
       grammer_focus: "Polite requests",
       lesson_type: "2",
       theme_category: "everyday_life",
+      TARGET_LANGUAGE: "ja",
       uuid: "4f41c96e-21b3-45a1-8bf7-4b6689c4ac59",
     },
     extraTags: [
@@ -164,6 +170,7 @@ export const initialLessons = [
   {
     id: "bcf9af63-75c2-410d-a541-1b61b099377f",
     title: "C1 테크 스타트업 - 투자자 브리핑 스크립트",
+    targetLanguage: "en",
     summary:
       "신규 투자 라운드 IR 피칭을 준비하는 학습자를 위해, 가정법과 분사구문을 활용한 고급 표현을 제공하는 개념+실전 혼합형 레슨입니다.",
     lessonType: 3,
@@ -177,6 +184,7 @@ export const initialLessons = [
       grammer_focus: "Advanced participles",
       lesson_type: "3",
       theme_category: "tech_Coding",
+      TARGET_LANGUAGE: "en",
       uuid: "bcf9af63-75c2-410d-a541-1b61b099377f",
     },
     extraTags: [
@@ -208,6 +216,7 @@ export const initialLessons = [
   {
     id: "f8d3af22-9bd4-46e2-8d52-4f1c6cb1edab",
     title: "B1 고객 지원 콜센터 롤 플레이 - 배송 지연 안내",
+    targetLanguage: "zh",
     summary:
       "온라인 쇼핑몰 고객에게 배송 지연을 안내하는 상황을 다루며, 공손한 사과와 해결책 제시를 연습하도록 설계된 롤 플레이입니다.",
     lessonType: 2,
@@ -222,6 +231,7 @@ export const initialLessons = [
       grammer_focus: "Apologizing politely",
       lesson_type: "2",
       theme_category: "everyday_life",
+      TARGET_LANGUAGE: "zh",
       uuid: "f8d3af22-9bd4-46e2-8d52-4f1c6cb1edab",
     },
     extraTags: [
